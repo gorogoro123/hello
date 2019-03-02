@@ -1,0 +1,3 @@
+#PRINT_VAL := print_val
+
+SECONDARY_SIZE += $(PRINT_VAL)
