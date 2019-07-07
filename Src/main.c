@@ -286,7 +286,46 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
+#define RAM_BASE 0x20000000
+#define RAM_BB_BASE 0x22000000
+
+#define Var_ResetBit_BB(VarAddr, BitNumber) \
+(*(__IO uint32_t *) (RAM_BB_BASE | ((VarAddr - RAM_BASE) << 5) | ((BitNumber) << 2)) = 0)
+
+#define Var_SetBit_BB(VarAddr, BitNumber) \
+(*(__IO uint32_t *) (RAM_BB_BASE | ((VarAddr - RAM_BASE) << 5) | ((BitNumber) << 2)) = 1)
+
+#define Var_GetBit_BB(VarAddr, BitNumber) \
+(*(__IO uint32_t *) (RAM_BB_BASE | ((VarAddr - RAM_BASE) << 5) | ((BitNumber) << 2)))
+
+//#define USE_TEST_BITBAND
+#if defined(USE_TEST_BITBAND)
+volatile uint32_t a[8];
+volatile uint32_t b[8];
+void test_bitband(void)
+{
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+
+    Var_SetBit_BB((int)&a[0], 0);
+
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+
+    b[0] |= 1;
+
+    __NOP();
+    __NOP();
+    __NOP();
+    __NOP();
+}
+#endif
 /* USER CODE END 4 */
 
 /* StartDefaultTask function */
@@ -294,7 +333,7 @@ void StartDefaultTask(void const * argument)
 {
 
   /* USER CODE BEGIN 5 */
-    static const uint8_t aTxBuffer[10] = {
+    static const uint8_t aTxBuffer[] = {
         0x3F,  // 0
         0x06,  // 1
         0x5B,  // 2
@@ -307,9 +346,13 @@ void StartDefaultTask(void const * argument)
         0x6F,  // 9
     };
 
+#if defined(USE_TEST_BITBAND)
+    test_bitband();
+#endif
+
     while(1){
         int i;
-        for(i = 0; i < 10; i++){
+        for(i = 0; i < ARRAY_SIZE(aTxBuffer); i++){
             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
             HAL_SPI_Transmit(&hspi1,(uint8_t*)&aTxBuffer[i],1,2000);
             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
